@@ -17,5 +17,7 @@ public class Location {
 
     private String normalizedName;
 
+    private String coordinates;
+
 
 }
