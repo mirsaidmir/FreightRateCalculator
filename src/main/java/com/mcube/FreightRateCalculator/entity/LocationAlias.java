@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Entity
 @Data
-@AllArgsConstructor
 public class LocationAlias {
 
     @Id

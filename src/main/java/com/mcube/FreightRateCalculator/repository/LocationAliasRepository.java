@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface LocationAliasRepository extends JpaRepository<LocationAlias, Long> {
     Optional<LocationAlias> findByAliasIgnoreCase(String alias);
+    boolean existsByAliasIgnoreCase(String alias);
 }
