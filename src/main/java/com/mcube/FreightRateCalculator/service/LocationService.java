@@ -11,6 +11,6 @@ public interface LocationService {
      * if there is no "similar city" returns "nullOptional"
      */
     Optional<Location> findLocation(String locationName);
-
+    Optional<Location> findByNormalizedNameIgnoreCase(String locationName);
 
 }

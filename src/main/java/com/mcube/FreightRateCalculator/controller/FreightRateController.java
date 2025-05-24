@@ -17,6 +17,7 @@ public class FreightRateController {
     @Autowired
     private LocationService locationService;
 
+    //@GetMapping(value = "/", produces = "application/json;charset=UTF-8")
     @GetMapping("/")
     public Location findCity(@RequestParam String cityName) {
         Optional<Location> res = locationService.findLocation(cityName);

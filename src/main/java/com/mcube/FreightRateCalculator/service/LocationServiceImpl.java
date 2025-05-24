@@ -42,6 +42,10 @@ public class LocationServiceImpl implements LocationService {
         Optional<Location> optLocation = geocodingApiClient.getLocation(locationName);
         if (optLocation.isPresent()) {
             Location location = optLocation.get();
+            if (locationRepo.existsByNormalizedNameIgnoreCase(location.getNormalizedName()))
+                location = findByNormalizedNameIgnoreCase(location.getNormalizedName()).get();
+            //Optional<Location> locationDB = locationRepo.findByNormalizedNameIgnoreCase(locationName);
+
             location = saveAliasAndLocation(location, locationName);
             return Optional.of(location);
         }
@@ -55,5 +59,8 @@ public class LocationServiceImpl implements LocationService {
         return location;
     }
 
-
+    @Override
+    public Optional<Location> findByNormalizedNameIgnoreCase(String locationName) {
+        return locationRepo.findByNormalizedNameIgnoreCase(locationName);
+    }
 }
