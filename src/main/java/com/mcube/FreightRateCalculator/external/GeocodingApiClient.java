@@ -1,29 +1,31 @@
 package com.mcube.FreightRateCalculator.external;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mcube.FreightRateCalculator.dto.ErrorGeoResponseDto;
 import com.mcube.FreightRateCalculator.dto.GeoResponseDto;
 import com.mcube.FreightRateCalculator.entity.Location;
-import com.mcube.FreightRateCalculator.service.LocationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.mcube.FreightRateCalculator.exceptionHandling.GeocodingApiClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Slf4j
 public class GeocodingApiClient {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Value("${geocoding.api.url}")
     private String apiBaseUrl;
@@ -43,6 +45,9 @@ public class GeocodingApiClient {
     private final String CITY_DOT = "г.";
     private final String LOCALITY = "locality";
     private final String PROVINCE = "province";
+
+    private final String GEOCODING_API_PARSE_ERROR_MESSAGE = "Не удалось распарсить ошибку Yandex Geocoding API";
+    private final String GEOCODING_API_REQUEST_IS_NOT_SUCCESSFUL = "запрос Yandex Geocoding API вернулся с ошибкой";
 
     public ResponseEntity<GeoResponseDto> fetchGeoResponseDto(String cityName) {
         return sendRequestWithCityIfMissing(cityName);
@@ -72,53 +77,71 @@ public class GeocodingApiClient {
                 .queryParam(PARAM_FORMAT, JSON_TXT)
                 .build()
                 .toUriString();
-        log.debug("Sending request:\n" + url);
-        ResponseEntity<GeoResponseDto> response = restTemplate.getForEntity(url, GeoResponseDto.class);
-        log.info(response.getStatusCode() + " "
-                + (response.getStatusCode().is2xxSuccessful() ? response.getBody().toString() : ""));
+
+        ResponseEntity<GeoResponseDto> response = null;
+
+        try {
+            response = restTemplate.getForEntity(url, GeoResponseDto.class);
+        } catch (HttpClientErrorException exception) {
+            String errorJson = exception.getResponseBodyAsString();
+            try {
+                ErrorGeoResponseDto errorGeoResponseDto = objectMapper.readValue(errorJson, ErrorGeoResponseDto.class);
+                throw new GeocodingApiClientException(errorGeoResponseDto);
+            } catch (JsonProcessingException e) {
+                throw new GeocodingApiClientException(GEOCODING_API_PARSE_ERROR_MESSAGE);
+            }
+        }
+
         return response;
     }
 
     public Optional<Location> getLocation(String locationName) {
         ResponseEntity<GeoResponseDto> response = fetchGeoResponseDto(locationName);
         HttpHeaders headers = response.getHeaders();
-        log.info("Content-Type: {}", response.getHeaders().getContentType());
+
         if (response.getStatusCode().is2xxSuccessful()) {
             GeoResponseDto geoResponseDto = response.getBody();
-
-            log.info(response.getBody().response.geoObjectCollection.featureMember.get(0).geoObject.name);
-
-            return parseGeoResponse(geoResponseDto);
+            return buildLocationFromGeoResponse(geoResponseDto);
         } else {
+            throw new GeocodingApiClientException(GEOCODING_API_REQUEST_IS_NOT_SUCCESSFUL);
             //suggest user manually entering location data (lon, lad, name, etc)
-            return Optional.empty();
+            //return Optional.empty();
         }
 
     }
 
-    private Optional<Location> parseGeoResponse(GeoResponseDto geoResponse) {
+    private Optional<Location> buildLocationFromGeoResponse(GeoResponseDto geoResponse) {
 
-        if (geoResponse == null) return Optional.empty();
+        if (geoResponse == null || geoResponse.getResponse() == null) return Optional.empty();
+        GeoResponseDto.Response responseDto = geoResponse.getResponse();
+
+        if (responseDto.geoObjectCollection == null || responseDto.geoObjectCollection.featureMember == null)
+            return Optional.empty();
 
         String normalizedName = "";
         String coordinates = "";
         String description = "";
 
-        List<GeoResponseDto.FeatureMember> featureMembers = geoResponse.getResponse().geoObjectCollection.featureMember;
+        List<GeoResponseDto.FeatureMember> featureMembers = responseDto.geoObjectCollection.featureMember;
         Location location = null;
         for (GeoResponseDto.FeatureMember featureMember : featureMembers) {
+
+            if (featureMember == null || featureMember.geoObject == null
+                    || featureMember.geoObject.metaDataProperty == null
+                    || featureMember.geoObject.metaDataProperty.geocoderMetaData == null
+                    || featureMember.geoObject.metaDataProperty.geocoderMetaData.kind == null) continue;
+
             if (!featureMember.geoObject.metaDataProperty.geocoderMetaData.kind.equalsIgnoreCase(LOCALITY) &&
-            !featureMember.geoObject.metaDataProperty.geocoderMetaData.kind.equalsIgnoreCase(PROVINCE))
+                    !featureMember.geoObject.metaDataProperty.geocoderMetaData.kind.equalsIgnoreCase(PROVINCE))
                 continue;
 
+            if (featureMember.geoObject.point == null) continue;
+
             coordinates = featureMember.geoObject.point.pos;
-//            normalizedName = featureMember.geoObject.metaDataProperty.geocoderMetaData.address
-//                    .components.stream().filter(s -> s.kind.equalsIgnoreCase(LOCALITY))
-//                    .findFirst().map(x -> x.name).orElse("");
             normalizedName = featureMember.geoObject.name;
             description = featureMember.geoObject.metaDataProperty.geocoderMetaData.text;
 
-            if (normalizedName.isBlank()) continue;
+            if (normalizedName == null || normalizedName.isBlank()) continue;
             break;
         }
 
