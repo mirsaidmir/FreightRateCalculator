@@ -2,7 +2,6 @@ package com.mcube.FreightRateCalculator.exceptionHandling;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,31 +13,38 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(GeocodingApiClientException.class)
-    public ResponseEntity<ApiErrorResponse> handleGeocodingException(GeocodingApiClientException exception, HttpServletRequest request) {
-        return buildData(exception, exception.getStatusCode(), request);
+    public ResponseEntity<ApiErrorResponse> handleGeocodingException(
+            GeocodingApiClientException exception,
+            HttpServletRequest request) {
+        return buildResponse(exception.getMessage(), exception.getHttpStatus(), request);
     }
 
     @ExceptionHandler(NoSuchLocationException.class)
-    public ResponseEntity<ApiErrorResponse> handleLocationException(NoSuchLocationException exception, HttpServletRequest request) {
-        return buildData(exception, HttpStatus.NOT_FOUND, request);
+    public ResponseEntity<ApiErrorResponse> handleLocationException(
+            NoSuchLocationException exception,
+            HttpServletRequest request) {
+        return buildResponse(exception.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(DistanceCalculationFailedException.class)
-    public ResponseEntity<ApiErrorResponse> handleDistanceException(DistanceCalculationFailedException exception, HttpServletRequest request) {
-        return buildData(exception, HttpStatus.NOT_FOUND, request);
+    public ResponseEntity<ApiErrorResponse> handleDistanceException(
+            DistanceCalculationFailedException exception,
+            HttpServletRequest request) {
+        return buildResponse(exception.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiErrorResponse> handleCommonException(Exception exception, HttpServletRequest request) {
-        return buildData(exception, HttpStatus.INTERNAL_SERVER_ERROR, request);
+        return buildResponse(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
-    private ResponseEntity<ApiErrorResponse> buildData(Exception exception, HttpStatusCode httpStatusCode, HttpServletRequest request) {
+    private ResponseEntity<ApiErrorResponse> buildResponse(String message, HttpStatus status, HttpServletRequest request) {
         ApiErrorResponse data = new ApiErrorResponse();
-        data.setStatusCode(httpStatusCode);
-        data.setInfo(exception.getMessage());
+        data.setStatusCode(status.value());
+        data.setError(status.getReasonPhrase());
+        data.setInfo(message);
         data.setPath(request.getRequestURI());
         data.setTimestamp(LocalDateTime.now());
-        return new ResponseEntity<>(data, httpStatusCode);
+        return new ResponseEntity<>(data, status);
     }
 }

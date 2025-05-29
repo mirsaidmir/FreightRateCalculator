@@ -41,8 +41,8 @@ public class GeocodingApiClient {
     private final String LANG_RU = "ru_RU";
     private final String JSON_TXT = "json";
 
-    private final String CITY = "город";
-    private final String CITY_DOT = "г.";
+    private final String CITY_WORD = "город";
+    private final String CITY_ABBREVIATION = "г.";
     private final String LOCALITY = "locality";
     private final String PROVINCE = "province";
 
@@ -55,17 +55,14 @@ public class GeocodingApiClient {
     }
 
     private ResponseEntity<GeoResponseDto> sendRequestWithCityIfMissing(String cityName) {
-        return isCityWordPresent(cityName) ? sendRequest(cityName) : sendRequest(CITY + " " + cityName);
+        return isCityWordPresent(cityName) ? sendRequest(cityName) : sendRequest(CITY_WORD + " " + cityName);
     }
 
-    private boolean isCityWordPresent(String text) {
-        return text.toLowerCase().contains(" " + CITY.toLowerCase() + " ") ||           //" город "
-                text.toLowerCase().startsWith(CITY.toLowerCase() + " ") ||               //"город " строго вначале, так как избегаем городов типа Новгород и т д
-                text.toLowerCase().endsWith(" " + CITY.toLowerCase()) ||                //" город" аналогично избегаем Новгорода
-                text.toLowerCase().contains(" " + CITY_DOT.toLowerCase() + " ") ||      // " г. "
-                text.toLowerCase().startsWith(CITY_DOT.toLowerCase()) ||                // "г." вначале допускается
-                text.toLowerCase().contains(" " + CITY_DOT.toLowerCase())               // " г." везде допускается/ отметаем варианты типа Гамбург.
-                ;
+    public static boolean isCityWordPresent(String text) {
+        String lowerText = text.toLowerCase();
+        //return lowerText.matches(".*\\bгород\\b.*|^город\\b.*|.*\\bгород$|.*\\bг\\..*|^г\\.\\b.*");
+        return lowerText.matches(".*\\sгород\\s.*|^город\\s.*|.*\\sгород$|.*\\sг\\..*|^г\\..*");
+
     }
 
     private ResponseEntity<GeoResponseDto> sendRequest(String cityName) {
