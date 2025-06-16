@@ -29,6 +29,7 @@ public class User implements UserDetails {
     private String firstname;
     private String lastname;
 
+    @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(value = EnumType.STRING)
     private List<Role> roles;
 
