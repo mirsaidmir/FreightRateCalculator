@@ -1,9 +1,8 @@
-package com.mcube.FreightRateCalculator.exceptionHandling;
+package com.mcube.FreightRateCalculator.exception;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.http.HttpStatusCode;
 
 import java.time.LocalDateTime;
 

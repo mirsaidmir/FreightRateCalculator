@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcube.FreightRateCalculator.dto.ErrorGeoResponseDto;
 import com.mcube.FreightRateCalculator.dto.GeoResponseDto;
 import com.mcube.FreightRateCalculator.entity.Location;
-import com.mcube.FreightRateCalculator.exceptionHandling.GeocodingApiClientException;
+import com.mcube.FreightRateCalculator.exception.GeocodingApiClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;

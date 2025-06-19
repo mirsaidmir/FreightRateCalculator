@@ -1,4 +1,4 @@
-package com.mcube.FreightRateCalculator.exceptionHandling;
+package com.mcube.FreightRateCalculator.exception;
 
 import com.mcube.FreightRateCalculator.dto.ErrorGeoResponseDto;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.mcube.FreightRateCalculator.exceptionHandling;
+package com.mcube.FreightRateCalculator.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

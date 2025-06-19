@@ -7,7 +7,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
+//import org.springframework.web.reactive.function.client.WebClient;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,9 +29,9 @@ public class AppConfig {
         return converter;
     }
 
-    @Bean
-    public WebClient webClient(WebClient.Builder builder) {
-        return builder.build();
-    }
+//    @Bean
+//    public WebClient webClient(WebClient.Builder builder) {
+//        return builder.build();
+//    }
 
 }

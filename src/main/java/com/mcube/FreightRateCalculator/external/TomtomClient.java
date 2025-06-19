@@ -6,7 +6,8 @@ import com.mcube.FreightRateCalculator.entity.Location;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate;
+//import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
@@ -19,7 +20,7 @@ public class TomtomClient {
 
 
     @Autowired
-    private WebClient webClient;
+    private RestTemplate restTemplate;
 
     @Value("${tomtom.api.key}")
     private String apiKey;
@@ -61,11 +62,9 @@ public class TomtomClient {
                 .build()
                 .toUriString();
 
-        return webClient.get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(TomtomRoutes.class)
-                .block();   //синхронно
+        return restTemplate
+                .getForEntity(url, TomtomRoutes.class)
+                .getBody();
     }
 
     private String buildLocations(String origin,String destination) {
